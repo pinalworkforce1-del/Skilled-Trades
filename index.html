@@ -336,6 +336,20 @@ function boostIndustryCompletion(moduleId,mount){
     fitBefore:preFit,fitAfter:postFit,
     participant:document.getElementById('participantName')?.value?.trim()||'',
     scenarioCount:Q.length,completedAt:new Date().toISOString()};
+
+  // Capture the actual report evidence, rather than only the completion receipt.
+  try{
+    evidence.alignmentLabel=document.getElementById('label')?.textContent?.trim()||'';
+    evidence.interest=document.getElementById('interest')?.value||'';
+    evidence.environmentFit=document.getElementById('env')?.value||'';
+    evidence.nextExperience=document.getElementById('nextExp')?.value||'';
+    evidence.skillScores=Object.entries(SK).map(([key,name])=>({name,score:Math.round(skillPct(key))}));
+    evidence.technicalExposure=EXPOSURE.map((name,i)=>({name,value:document.getElementById('exp'+i)?.value||'Not recorded'}));
+    evidence.strongSignals=signalScores().slice(0,2).map(x=>x.name);
+    evidence.reportTakeaway=document.getElementById('take')?.textContent?.trim()||'';
+    evidence.coachReflection=document.getElementById('change')?.querySelector('.coachCue')?.textContent?.trim()||'';
+    evidence.exploredSkills=Object.values(explored).filter(Boolean).length;
+  }catch(err){console.warn('Detailed industry report capture unavailable',err);}
   const send=(saveRequested)=>{
     if(window.parent===window)return;
     window.parent.postMessage({type:'boost-industry-challenge-completed',module:moduleId,evidence,saveRequested:!!saveRequested},'*');
