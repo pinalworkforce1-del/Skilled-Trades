@@ -379,5 +379,43 @@ function boostIndustryCompletion(moduleId,mount){
   send(false);
 }
 
+
+(function(){
+ const names={healthcare:'Healthcare',trades:'Skilled Trades',manufacturing:'Advanced Manufacturing',it:'Information Technology',cdl:'CDL / Transportation'};
+ const qs=new URLSearchParams(location.search);
+ const expected=Object.keys(names).find(k=>location.pathname.toLowerCase().includes(k))||'';
+ function escapeText(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ function renderSaved(e){
+   if(!e?.completed||!e.module?.startsWith('industry-'))return;
+   const sector=e.module.slice(9),item=(name,val)=>'<div style="padding:10px;border-bottom:1px solid #d6e2e7"><b>'+escapeText(name)+'</b><div>'+escapeText(val)+'</div></div>';
+   const list=(xs,fn)=>Array.isArray(xs)?xs.map(fn).join(''):'';
+   let mount=document.getElementById('boostSavedIndustryReport');
+   if(!mount){mount=document.createElement('section');mount.id='boostSavedIndustryReport';document.body.prepend(mount)}
+   mount.style.cssText='position:relative;z-index:50;max-width:1050px;margin:22px auto;padding:24px;border:2px solid #0b8f8b;border-radius:16px;background:#fff;color:#17364b;font:16px/1.5 Arial,sans-serif;box-shadow:0 14px 35px #0002';
+   mount.innerHTML='<h2 style="margin-top:0">Saved '+escapeText(names[sector]||sector)+' Workplace Skills Report</h2>'+
+   '<p>Your previously completed experience was recovered from your BOOST account. You do not need to retake the challenge to view these results.</p>'+
+   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">'+
+   item('Judgment alignment',e.alignment==null?'Not recorded':e.alignment+'%')+
+   item('Scenarios completed',e.scenarioCount??'Not recorded')+
+   item('Fit before',e.fitBefore==null?'Not recorded':e.fitBefore+'/5')+
+   item('Fit after',e.fitAfter==null?'Not recorded':e.fitAfter+'/5')+'</div>'+
+   (e.alignmentLabel?'<h3>'+escapeText(e.alignmentLabel)+'</h3>':'')+
+   (e.skillScores?.length?'<h3>Workplace Judgment</h3>'+list(e.skillScores,x=>item(x.name,x.score+'%')):'')+
+   (e.technicalExposure?.length?'<h3>Technical Exposure</h3>'+list(e.technicalExposure,x=>item(x.name,x.value)):'')+
+   (e.strongSignals?.length?'<h3>Relative Strengths</h3><p>'+escapeText(e.strongSignals.join(' • '))+'</p>':'')+
+   (e.reportTakeaway?'<h3>What This Means</h3><p>'+escapeText(e.reportTakeaway)+'</p>':'')+
+   (e.nextExperience?item('Next interest',e.nextExperience):'')+
+   (e.coachReflection?item('Reflection cue',e.coachReflection):'')+
+   '<p style="font-size:13px;color:#607583">Career exploration evidence only; not an occupational credential or qualification.</p>'+
+   '<button type="button" id="boostSavedIndustryClose" style="padding:10px 17px;background:#0b6c70;color:white;border:0;border-radius:8px;cursor:pointer">Explore this challenge again</button>';
+   mount.querySelector('#boostSavedIndustryClose').onclick=()=>mount.remove();
+   mount.scrollIntoView({block:'start'});
+ }
+ window.addEventListener('message',event=>{
+   if(event.source!==window.parent||event.data?.type!=='boost-industry-restore-report')return;
+   if(event.data.module!==event.data.evidence?.module)return;
+   renderSaved(event.data.evidence);
+ });
+})();
 </script>
 </body></html>
