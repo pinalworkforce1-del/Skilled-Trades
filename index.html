@@ -386,31 +386,38 @@ function boostIndustryCompletion(moduleId,mount){
  const expected=Object.keys(names).find(k=>location.pathname.toLowerCase().includes(k))||'';
  function escapeText(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
  function renderSaved(e){
-   if(!e?.completed||!e.module?.startsWith('industry-'))return;
-   const sector=e.module.slice(9),item=(name,val)=>'<div style="padding:10px;border-bottom:1px solid #d6e2e7"><b>'+escapeText(name)+'</b><div>'+escapeText(val)+'</div></div>';
-   const list=(xs,fn)=>Array.isArray(xs)?xs.map(fn).join(''):'';
-   let mount=document.getElementById('boostSavedIndustryReport');
-   if(!mount){mount=document.createElement('section');mount.id='boostSavedIndustryReport';document.body.prepend(mount)}
-   mount.style.cssText='position:relative;z-index:50;max-width:1050px;margin:22px auto;padding:24px;border:2px solid #0b8f8b;border-radius:16px;background:#fff;color:#17364b;font:16px/1.5 Arial,sans-serif;box-shadow:0 14px 35px #0002';
-   mount.innerHTML='<h2 style="margin-top:0">Saved '+escapeText(names[sector]||sector)+' Workplace Skills Report</h2>'+
-   '<p>Your previously completed experience was recovered from your BOOST account. You do not need to retake the challenge to view these results.</p>'+
-   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">'+
-   item('Judgment alignment',e.alignment==null?'Not recorded':e.alignment+'%')+
-   item('Scenarios completed',e.scenarioCount??'Not recorded')+
-   item('Fit before',e.fitBefore==null?'Not recorded':e.fitBefore+'/5')+
-   item('Fit after',e.fitAfter==null?'Not recorded':e.fitAfter+'/5')+'</div>'+
-   (e.alignmentLabel?'<h3>'+escapeText(e.alignmentLabel)+'</h3>':'')+
-   (e.skillScores?.length?'<h3>Workplace Judgment</h3>'+list(e.skillScores,x=>item(x.name,x.score+'%')):'')+
-   (e.technicalExposure?.length?'<h3>Technical Exposure</h3>'+list(e.technicalExposure,x=>item(x.name,x.value)):'')+
-   (e.strongSignals?.length?'<h3>Relative Strengths</h3><p>'+escapeText(e.strongSignals.join(' • '))+'</p>':'')+
-   (e.reportTakeaway?'<h3>What This Means</h3><p>'+escapeText(e.reportTakeaway)+'</p>':'')+
-   (e.nextExperience?item('Next interest',e.nextExperience):'')+
-   (e.coachReflection?item('Reflection cue',e.coachReflection):'')+
-   '<p style="font-size:13px;color:#607583">Career exploration evidence only; not an occupational credential or qualification.</p>'+
-   '<button type="button" id="boostSavedIndustryClose" style="padding:10px 17px;background:#0b6c70;color:white;border:0;border-radius:8px;cursor:pointer">Explore this challenge again</button>';
-   mount.querySelector('#boostSavedIndustryClose').onclick=()=>mount.remove();
-   mount.scrollIntoView({block:'start'});
- }
+ if(!e?.completed||!e.module?.startsWith('industry-'))return;
+ const sector=e.module.slice(9),esc=escapeText;
+ const score=Number(e.alignment||0), before=Number(e.fitBefore||0),after=Number(e.fitAfter||0);
+ const label=e.alignmentLabel||(score>=85?'STRONG WORKPLACE ALIGNMENT':score>=70?'PROMISING ALIGNMENT':score>=55?'MIXED ALIGNMENT — EXPLORE MORE':'MORE EXPOSURE RECOMMENDED');
+ const line=(name,value)=>'<div class="bsReportLine"><span>'+esc(name)+'</span><b>'+esc(value)+'</b></div>';
+ const card=(title,body)=>'<section class="bsReportCard"><h3>'+esc(title)+'</h3>'+body+'</section>';
+ const skills=Array.isArray(e.skillScores)?e.skillScores:[];
+ const exposure=Array.isArray(e.technicalExposure)?e.technicalExposure:[];
+ const relative=Array.isArray(e.strongSignals)?e.strongSignals:[];
+ const delta=after-before,deltaText=(delta>0?'+':'')+delta;
+ const styles='<style id="bsReportStyle">#boostSavedIndustryReport{position:relative;z-index:50;max-width:1120px;margin:22px auto;padding:28px;border-radius:16px;background:#f7fafb;color:#243746;font:16px/1.5 Arial,sans-serif;box-shadow:0 12px 40px #0002}#boostSavedIndustryReport .bsEyebrow{color:#008d83;font-size:12px;letter-spacing:2px;font-weight:900;text-transform:uppercase}#boostSavedIndustryReport .bsHeadline{font-size:clamp(29px,5vw,48px);line-height:1.14;color:#9b7815;margin:18px 0 8px;font-weight:900}#boostSavedIndustryReport .bsSub{color:#607481;margin-bottom:22px}#boostSavedIndustryReport .bsReportGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#boostSavedIndustryReport .bsReportCard{border:1px solid #d3dfe5;background:white;border-radius:12px;padding:18px;min-width:0}#boostSavedIndustryReport h3{font-size:20px;color:#174965;margin:0 0 14px}#boostSavedIndustryReport .bsReportLine{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:7px 0;border-bottom:1px solid #e5ebef}#boostSavedIndustryReport .bsReportLine:last-child{border:0}#boostSavedIndustryReport .bsExposure{display:flex;flex-direction:column;gap:7px}#boostSavedIndustryReport .bsPill{display:inline-block;margin:4px 5px 4px 0;padding:5px 9px;border-radius:6px;background:#e5f2ef;color:#236249;font-size:13px;font-weight:700}#boostSavedIndustryReport .bsSignal{border-left:4px solid #0b918c;padding:5px 12px;margin:10px 0;background:#f3faf9}#boostSavedIndustryReport .bsNotice{font-size:13px;color:#607583;margin:17px 0}#boostSavedIndustryReport .bsAction{padding:11px 17px;background:#0b6c70;color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:700}@media(max-width:680px){#boostSavedIndustryReport{padding:15px}#boostSavedIndustryReport .bsReportGrid{grid-template-columns:1fr}}@media print{body>*:not(#boostSavedIndustryReport){display:none!important}#boostSavedIndustryReport{box-shadow:none;margin:0;padding:0}#boostSavedIndustryReport .bsAction{display:none!important}}</style>';
+ let mount=document.getElementById('boostSavedIndustryReport');
+ if(!mount){mount=document.createElement('section');mount.id='boostSavedIndustryReport';document.body.prepend(mount)}
+ mount.innerHTML=styles+'<div class="bsEyebrow">BOOST '+esc(names[sector]||sector)+' workplace skills snapshot</div>'+
+ '<p class="bsSub">Your saved completion report • '+esc(e.scenarioCount??'—')+' workplace scenarios completed</p>'+
+ '<div class="bsEyebrow" style="color:#7b8792">Alignment snapshot</div>'+
+ '<h2 class="bsHeadline">'+esc(label)+'</h2>'+
+ '<p class="bsSub">Situational judgment score: <b>'+esc(score)+'%</b></p>'+
+ '<div class="bsReportGrid">'+
+ card('Skills Explored',e.exploredSkills!=null?'<p><b>'+esc(e.exploredSkills)+'</b> employer-demand skills explored</p>'+skills.map(s=>'<span class="bsPill">✓ '+esc(s.name)+'</span>').join(''):'<p>Detailed exploration data not saved for this attempt.</p>')+
+ card('Workplace Judgment',skills.length?skills.map(s=>line(s.name,s.score+'%')).join(''):'<p>Detailed skill results were not recorded in this completion.</p>')+
+ card('Technical Exposure',exposure.length?'<div class="bsExposure">'+exposure.map(x=>'<div><b>'+esc(x.name)+':</b> '+esc(x.value)+'</div>').join('')+'</div>':'<p>Technical exposure details were not recorded.</p>')+
+ card('What Changed?','<p><b>Before:</b> '+esc(before)+'/5<br><b>After:</b> '+esc(after)+'/5<br><b>Change:</b> '+esc(deltaText)+'<br><b>Interest:</b> '+esc(e.interest||'Not recorded')+'<br><b>Environment fit:</b> '+esc(e.environmentFit||'Not recorded')+'</p>'+(e.coachReflection?'<div class="bsSignal"><b>Reflection cue</b><p>'+esc(e.coachReflection)+'</p></div>':''))+
+ card('Where Your Responses Stood Out',relative.length?relative.map(s=>'<div class="bsSignal"><b>'+esc(s)+'</b><p>Comparatively strong alignment in this challenge.</p></div>').join('')+'<p class="bsNotice">Exploration signals, not occupational recommendations.</p>':'<p>Relative strengths were not recorded.</p>')+
+ card('What This Means','<p>'+esc(e.reportTakeaway||'Your completed challenge results can inform a discussion with your career coach.')+'</p>'+(e.nextExperience?'<p><b>Next interest:</b> '+esc(e.nextExperience)+'</p>':''))+
+ '</div><p class="bsNotice">This is a career-alignment learning activity, not a hiring assessment, certification exam, or determination of occupational qualification.</p>'+
+ '<button type="button" class="bsAction" id="bsPrintReport">Print / Save report as PDF</button> '+
+ '<button type="button" class="bsAction" id="boostSavedIndustryClose">Explore this challenge again</button>';
+ mount.querySelector('#boostSavedIndustryClose').onclick=()=>mount.remove();
+ mount.querySelector('#bsPrintReport').onclick=()=>window.print();
+ mount.scrollIntoView({block:'start'});
+}
  window.addEventListener('message',event=>{
    if(event.source!==window.parent||event.data?.type!=='boost-industry-restore-report')return;
    if(event.data.module!==event.data.evidence?.module)return;
